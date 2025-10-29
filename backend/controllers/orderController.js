@@ -5,7 +5,12 @@ import razorpay from "razorpay";
 
 // global variables
 const currency = "inr";
-const deliveryCharge = 10;
+// const deliveryCharge = 10;
+// Calculate dynamic delivery charge (10% of total, max ₹10)
+const calculateDeliveryCharge = (amount) => {
+  const charge = amount * 0.1; // 10% of total
+  return charge > 10 ? 10 : charge; // maximum ₹10
+};
 
 // gateway initialize
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -72,13 +77,15 @@ const placeOrderStripe = async (req, res) => {
       quantity: item.quantity,
     }));
 
+    const deliveryCharge = calculateDeliveryCharge(amount);
+
     line_items.push({
       price_data: {
         currency: currency,
         product_data: {
           name: "Delivery Charges",
         },
-        unit_amount: deliveryCharge * 100,
+        unit_amount: Math.round(deliveryCharge * 100),
       },
       quantity: 1,
     });
@@ -134,8 +141,11 @@ const placeOrderRazorpay = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
+    const deliveryCharge = calculateDeliveryCharge(amount);
+    const totalAmount = amount + deliveryCharge;
+
     const options = {
-      amount: amount * 100,
+      amount: Math.round(totalAmount * 100),
       currency: currency.toUpperCase(),
       receipt: newOrder._id.toString(),
     };
