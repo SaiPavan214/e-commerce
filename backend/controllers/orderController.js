@@ -128,12 +128,15 @@ const placeOrderRazorpay = async (req, res) => {
   try {
     const { userId, items, amount, address } = req.body;
 
+    const deliveryCharge = calculateDeliveryCharge(amount);
+
     const orderData = {
       userId,
       items,
       address,
       amount,
-      paymentMethod: "Razorpay",
+      deliveryCharge,
+      paymentMethod: "Stripe", // or Razorpay / COD
       payment: false,
       date: Date.now(),
     };
@@ -141,7 +144,7 @@ const placeOrderRazorpay = async (req, res) => {
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
-    const deliveryCharge = calculateDeliveryCharge(amount);
+    // const deliveryCharge = calculateDeliveryCharge(amount);
     const totalAmount = amount + deliveryCharge;
 
     const options = {
